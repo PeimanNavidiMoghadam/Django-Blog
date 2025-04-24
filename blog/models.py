@@ -63,8 +63,6 @@ class Post(models.Model):
     tags = models.ManyToManyField(Tag, blank=True)  
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
-    created = models.DateTimeField(auto_now_add=True)
-    updated = models.DateTimeField(auto_now=True)
     published = models.DateTimeField(default=timezone.now)
     status = models.CharField(max_length=2, choices=Status.choices, default=Status.DRAFT)
     meta_title = models.CharField(max_length=70, blank=True)
