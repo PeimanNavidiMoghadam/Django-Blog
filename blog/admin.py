@@ -12,3 +12,17 @@ class PostAdmin(admin.ModelAdmin):
     date_hierarchy = 'published'
     ordering = ('-published',)
     filter_horizontal = ('tags',)  # برای انتخاب چندتایی تگ‌ها
+
+
+# admin.p
+
+@admin.register(Category)
+class CategoryAdmin(admin.ModelAdmin):
+    list_display = ('name', 'slug')  # در صفحه لیست ادمین این فیلدها نمایش داده میشن
+    prepopulated_fields = {'slug': ('name',)}  # هنگام نوشتن عنوان، اسلاگ خودش ساخته میشه
+
+
+@admin.register(Tag)
+class TagAdmin(admin.ModelAdmin):
+    list_display = ('name', 'slug')  # فیلدهایی که توی لیست نشون داده میشن
+    prepopulated_fields = {'slug': ('name',)}  # موقع وارد کردن عنوان، اسلاگ اتوماتیک ساخته میشه

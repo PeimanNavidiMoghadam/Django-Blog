@@ -60,7 +60,8 @@ class Post(models.Model):
         )
     
     category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True, blank=True)
-    tags = models.ManyToManyField(Tag, blank=True)  
+    tags = models.ManyToManyField(Tag, blank=True) 
+    body = models.TextField() 
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
     published = models.DateTimeField(default=timezone.now)
