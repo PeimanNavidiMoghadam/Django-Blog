@@ -26,3 +26,20 @@ class CategoryAdmin(admin.ModelAdmin):
 class TagAdmin(admin.ModelAdmin):
     list_display = ('name', 'slug')  # فیلدهایی که توی لیست نشون داده میشن
     prepopulated_fields = {'slug': ('name',)}  # موقع وارد کردن عنوان، اسلاگ اتوماتیک ساخته میشه
+
+
+
+@admin.register(Comment)
+class CommentAdmin(admin.ModelAdmin):
+    list_display = ('user', 'post', 'status', 'created')
+    list_filter = ('status', 'created')
+    search_fields = ('user__username', 'post__title', 'body')
+    actions = ['approve_comments', 'reject_comments']
+
+    def approve_comments(self, request, queryset):
+        queryset.update(status=Comment.Status.APPROVED)
+    approve_comments.short_description = 'تایید کامنت‌های انتخاب شده'
+
+    def reject_comments(self, request, queryset):
+        queryset.update(status=Comment.Status.REJECTED)
+    reject_comments.short_description = 'رد کردن کامنت‌های انتخاب شده'
