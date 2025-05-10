@@ -7,13 +7,18 @@ from django.http import HttpResponseRedirect
 from django.urls import reverse
 from django.shortcuts import redirect
 from django.urls import reverse
-
+from django.http import JsonResponse
+from django.views.decorators.http import require_POST
+from django.views.decorators.csrf import csrf_exempt
+from django.contrib.auth.decorators import login_required
 class HomeView(TemplateView):
     template_name = 'blog/home.html'
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['latest_posts'] = Post.objects.filter(status='P').order_by('-created')[:6]
+        context['post_title'] = 'Latest posts'
+        
         return context
 
 
@@ -32,7 +37,8 @@ class PostListView(ListView):
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['page_title'] = 'Blog'  
+        context['page_title'] = 'All posts'
+        context['page1_title'] = 'Blog'  
         context['categories'] = Category.objects.all() 
         
         return context 
@@ -56,6 +62,10 @@ class PostDetailView(DetailView):
         context['form'] = CommentForm()  # فرم خالی برای نمایش
       # فقط کامنت‌های تایید شده + بهینه شده با یوزر
         context['comments'] = self.object.comments.filter(status='A').select_related('user')
+        if self.request.user.is_authenticated:
+            context['has_liked'] = self.object.likes.filter(user=self.request.user).exists()
+        else:
+            context['has_liked'] = False
         return context
 
     def post(self, request, *args, **kwargs):
@@ -90,7 +100,7 @@ class CategoryPostListView(ListView):
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['page_title'] = f"category: {self.category.name}"
+        context['page_title'] = f"Category: {self.category.name}"
         context['categories'] = Category.objects.all()
         context['selected_category'] = self.category
         return context
@@ -116,3 +126,19 @@ class TagPostListView(ListView):
         context['tags'] = Tag.objects.all()
         context['selected_tag'] = self.tag
         return context
+    
+    
+@require_POST
+@login_required
+def like_post(request, slug):
+    post = get_object_or_404(Post, slug=slug, status='P')
+
+    
+    like, created = Like.objects.get_or_create(user=request.user, post=post)
+
+    if not created:
+        # اگر قبلا لایک کرده بود، آنلایک کنیم
+        like.delete()
+
+    return redirect('PostDetail', slug=slug)
+    
