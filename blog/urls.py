@@ -8,6 +8,7 @@ urlpatterns = [
     path('category/<slug:slug>/',views.CategoryPostListView.as_view(), name='category_posts'),
     path('tag/<slug:slug>/',views.TagPostListView.as_view(),name='tag_posts'),
     path('post/<slug:slug>/like/',views.like_post, name='like_post'),
-
+    path('comment/<int:comment_id>/like/', views.like_comment, name='like_comment'),
+    
     
 ]

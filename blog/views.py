@@ -1,7 +1,7 @@
 from django.shortcuts import render
 from django.shortcuts import get_object_or_404
 from django.views.generic import TemplateView, ListView,DetailView
-from . models import Post, Category, Tag, Like
+from . models import Post, Category, Tag, Like,Comment,CommentLike
 from . forms import CommentForm
 from django.http import HttpResponseRedirect
 from django.urls import reverse
@@ -11,6 +11,9 @@ from django.http import JsonResponse
 from django.views.decorators.http import require_POST
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.decorators import login_required
+from django.db.models import Prefetch
+from django.db.models import Count
+
 class HomeView(TemplateView):
     template_name = 'blog/home.html'
     
@@ -61,7 +64,18 @@ class PostDetailView(DetailView):
         context['page_title'] = 'PostDetail'
         context['form'] = CommentForm()  # فرم خالی برای نمایش
       # فقط کامنت‌های تایید شده + بهینه شده با یوزر
-        context['comments'] = self.object.comments.filter(status='A').select_related('user')
+        context['comments'] = self.object.comments.filter(
+            status='A', parent__isnull=True
+        ).select_related('user').prefetch_related(
+            Prefetch(
+    'replies',
+    queryset=Comment.objects.filter(status='A').select_related('user').annotate(like_count=Count('likes'))
+)
+        ).annotate(like_count=Count('likes'))
+        
+        
+        
+
         if self.request.user.is_authenticated:
             context['has_liked'] = self.object.likes.filter(user=self.request.user).exists()
         else:
@@ -75,6 +89,7 @@ class PostDetailView(DetailView):
             comment = form.save(commit=False)
             comment.post = self.object
             comment.user = request.user
+            comment.parent = form.cleaned_data.get('parent')
             comment.save()
             return redirect(self.get_success_url())
         context = self.get_context_data()
@@ -142,3 +157,17 @@ def like_post(request, slug):
 
     return redirect('PostDetail', slug=slug)
     
+
+@require_POST
+@login_required
+def like_comment(request, comment_id):
+    comment = get_object_or_404(Comment, id=comment_id)
+
+    # بررسی وجود لایک قبلی
+    like, created = CommentLike.objects.get_or_create(user=request.user, comment=comment)
+
+    if not created:
+        like.delete()  # اگر قبلاً لایک کرده، حذفش کن (آن‌لایک)
+
+    # ریدایرکت به جزئیات پست
+    return redirect('PostDetail', slug=comment.post.slug)

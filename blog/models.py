@@ -95,6 +95,13 @@ class Comment(models.Model):
     body = models.TextField()
     created = models.DateTimeField(auto_now_add=True)
     status = models.CharField(max_length=1, choices=Status.choices, default=Status.PENDING)
+    parent = models.ForeignKey(
+        'self',
+        null=True,
+        blank=True,
+        related_name='replies',
+        on_delete=models.CASCADE
+    )
     
     def __str__(self):
         return f'Comment by {self.user.username} on {self.post}'
@@ -113,3 +120,18 @@ class Like(models.Model):
         
     def __str__(self):
         return f"{self.user} liked {self.post}"
+    
+    
+    
+class CommentLike(models.Model):
+    comment = models.ForeignKey(Comment, on_delete=models.CASCADE, related_name='likes')
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='comment_likes')
+    created = models.DateTimeField(auto_now_add=True)
+    
+    
+    class Meta:
+        unique_together= ('comment','user') 
+        
+        
+    def __str__(self):
+        return f"{self.user.username} liked comment {self.comment.id}"  
